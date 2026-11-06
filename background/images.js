@@ -1,6 +1,6 @@
-// 画像の取得と、Claude visionによる文字起こし/翻訳。
+// 画像の取得と、選択したモデルによる文字起こし/翻訳。
 import { estimateCostUsd } from "../shared/models.js";
-import { buildRequest, extractText, usageOf, checkStop } from "../shared/api.js";
+import { buildRequest, extractText, usageOf, checkStop, requireApiKey } from "../shared/api.js";
 import { cacheGetMany, cacheSetMany, sha256 } from "../shared/cache.js";
 import { getSettings, addUsage } from "../shared/settings.js";
 import { IMAGE_VERSION, normalizeImageRequest, buildImageSystem, buildImageMessage, imageOutputFormat, parseImageResult, fetchRemoteImage } from "../shared/image.js";
@@ -18,7 +18,7 @@ export async function translateImage(msg) {
     const input = normalizeImageRequest(msg);
     const s = await getSettings();
     if (signal.aborted) throw abortError();
-    if (!s.apiKey) throw fatalError("APIキーが未設定です（拡張の設定画面で登録してください）");
+    requireApiKey(s);
     const system = buildImageSystem(s);
     const message = buildImageMessage(input, s);
     const imageHash = await sha256(input.image.data);
@@ -32,12 +32,7 @@ export async function translateImage(msg) {
       }
     }
     if (signal.aborted) throw abortError();
-    const req = buildRequest(s, system, message, { maxTokens: 8000 });
-    req.body.output_config.format = imageOutputFormat();
-    req.body.messages[0].content = [
-      { type: "image", source: { type: "base64", media_type: input.image.mediaType, data: input.image.data }, transformations: { oversized_image: "error" } },
-      { type: "text", text: message },
-    ];
+    const req = buildRequest(s, system, message, { maxTokens: 8000, image: input.image, outputFormat: imageOutputFormat() });
     const response = await fetchWithRetry(req, signal);
     const u = usageOf(response);
     const costUsd = estimateCostUsd(s.model, u);

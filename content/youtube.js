@@ -108,8 +108,11 @@
     try {
       const settings = await send({ type: "getSettings" });
       if (!active(r)) return;
-      if (!settings?.settings?.hasKey) throw new Error("APIキーが未設定です。Yomeru の設定画面で登録してください");
-      r.model = settings.settings.subtitleModel || "claude-haiku-5-5";
+      const saved = settings?.settings;
+      r.model = saved?.subtitleModel || "claude-haiku-5-5";
+      const provider = saved?.models?.find((model) => model.id === r.model)?.provider;
+      const hasKey = provider === "openai" ? saved.hasOpenAIKey : provider === "anthropic" ? saved.hasAnthropicKey : saved?.hasKey;
+      if (!hasKey) throw new Error(`${provider === "openai" ? "OpenAI" : "Anthropic"} APIキーが未設定です。Yomeru の設定画面で登録してください`);
       if (options.targetLang == null) r.targetLang = targetLang = settings.settings.subtitleTargetLang === "English" ? "English" : "日本語";
       const result = await send({ type: "getYouTubeCaptions", videoId: id });
       if (!active(r)) return;

@@ -140,7 +140,9 @@
           ui.setPanelModels(settings.models, panelModel);
         }
         const requestModel = panelModel;
-        if (!settings.hasKey) { showError("APIキーが未設定です。拡張の設定画面で登録してください。"); return; }
+        const provider = settings.models?.find((model) => model.id === (mode === "explain" ? requestModel : settings.model))?.provider;
+        const hasKey = provider === "openai" ? settings.hasOpenAIKey : provider === "anthropic" ? settings.hasAnthropicKey : settings.hasKey;
+        if (!hasKey) { showError(`${provider === "openai" ? "OpenAI" : "Anthropic"} APIキーが未設定です。拡張の設定画面で登録してください。`); return; }
         if (mode === "explain" && settings.explanationEnabled === false) { showError("解説機能は設定で無効になっています。"); return; }
         if (mode === "explain" && selected.text.length > 6000) { showError("選択範囲を6,000文字以内にしてください。"); return; }
 

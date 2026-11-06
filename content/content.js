@@ -203,7 +203,8 @@
     state.error = null;
     const settings = await loadSettings();
     if (!settings.hasKey) {
-      getUi().showBadge("APIキーが未設定です。拡張の設定画面で登録してください", "error", 5000);
+      const provider = settings.models?.find((model) => model.id === settings.model)?.provider;
+      getUi().showBadge(`${provider === "openai" ? "OpenAI" : "Anthropic"} APIキーが未設定です。拡張の設定画面で登録してください`, "error", 5000);
       return;
     }
     const mode = opts.mode || settings.displayMode || "replace";

@@ -46,7 +46,10 @@
         overlay.start(source);
         const settings = await loadSettings();
         if (!isCurrent()) return;
-        if (!settings.hasKey) throw new Error("APIキーが未設定です。拡張の設定画面で登録してください。");
+        if (!settings.hasKey) {
+          const provider = settings.models?.find((model) => model.id === settings.model)?.provider;
+          throw new Error(`${provider === "openai" ? "OpenAI" : "Anthropic"} APIキーが未設定です。拡張の設定画面で登録してください。`);
+        }
         const image = await TFImageCodec.prepare(url, captured?.source, {
           signal: request.ctrl.signal, sessionId: request.sessionId, send,
         });

@@ -12,12 +12,12 @@
     <img class="mark" src="../icons/icon48.png" alt="">
     <div>
       <h1>yomeru</h1>
-      <div class="sub">Claude で、読みやすい日本語に</div>
+      <div class="sub">Claude・GPT で、読みやすい日本語に</div>
     </div>
   </header>
 
   <section class="card" id="nokey" hidden>
-    <p class="warn">API キーがまだ登録されていません。</p>
+    <p class="warn" id="nokeyText">選択中のモデルの API キーがまだ登録されていません。</p>
     <button class="btn small" id="openOptions1">設定を開く</button>
   </section>
 
@@ -32,11 +32,12 @@
     <div class="row"><label class="lbl" for="subtitleLang">字幕の言語</label><select id="subtitleLang"><option value="日本語">日本語</option><option value="English">English</option></select></div>
     <div class="row"><label class="lbl" for="subtitleMode">表示</label><select id="subtitleMode"><option value="bilingual">原文と併記</option><option value="replace">翻訳字幕のみ</option></select></div>
     <div class="row"><label class="lbl" for="subtitleModel">モデル</label><select id="subtitleModel"></select></div>
+    <p class="muted youtube-hint" id="subtitleProvider"></p>
     <p id="subtitleStatus" class="muted" role="status" aria-live="polite">字幕付きの通常動画に対応しています。</p>
     <div class="btnrow"><button class="btn" id="subtitleStart">字幕を翻訳</button><button class="btn ghost" id="subtitleStop" hidden>字幕を停止</button></div>
     <p id="subtitleError" class="err" hidden></p>
     <p class="muted youtube-hint" id="subtitleCost"></p>
-    <p class="muted youtube-hint">開始すると字幕を Claude に送信します。API利用料がかかります。字幕取得のため文字起こし欄が開くことがあります。</p>
+    <p class="muted youtube-hint">開始すると字幕を選択したモデルの API に送信します。API利用料がかかります。字幕取得のため文字起こし欄が開くことがあります。</p>
   </section>
 
   <section class="card" id="main" hidden>

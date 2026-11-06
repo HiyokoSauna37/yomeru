@@ -1,6 +1,6 @@
 # Yomeru（よめる）
 
-<p align="center"><img src="docs/hero.webp" alt="Yomeru — Webを、読みやすい日本語に。Claude で、ページをその場で翻訳。" width="100%"></p>
+<p align="center"><img src="docs/hero.webp" alt="Yomeru — Webを、読みやすい日本語に。ページをその場で翻訳。" width="100%"></p>
 
 <p align="center">
   <strong>英語の Web ページを、その場で「読める」に。</strong><br>
@@ -15,8 +15,10 @@
   <a href="#料金の目安">料金を確認する</a>
 </p>
 
-Yomeru は、自分の Claude API キーで動く個人用 Chrome 拡張です。
+Yomeru は、自分の Anthropic / OpenAI API キーで動く個人用 Chrome 拡張です。
 海外の技術資料も長い記事も、翻訳から質問まで今開いているページの中で完結します。
+両方のキーを同時に保存でき、Claude を選べば Anthropic、GPT を選べば OpenAI の API を自動で使います。
+GPT は GPT-6.1 Sol / GPT-6.1 Terra / GPT-6 Luna / GPT-6 Astra を選べます。
 
 - **ページを丸ごと読む** — レイアウトやリンクを保ちながら、本文を日本語に置き換える
 - **原文と読み比べる** — 段落ごとに原文と訳文を並べる対訳モード
@@ -26,7 +28,7 @@ Yomeru は、自分の Claude API キーで動く個人用 Chrome 拡張です�
 - **翻訳中は広告を隠す** — 明確に識別できる広告枠を画面と翻訳対象から除外し、原文表示へ戻すと復元する
 
 > [!NOTE]
-> 必要なのはデスクトップ版 Chrome と Claude API キーです。現在は Chrome ウェブストア未公開のため手動インストールですが、ビルドや Node.js は必要ありません。
+> 必要なのはデスクトップ版 Chrome と、使うモデルの API キーです。現在は Chrome ウェブストア未公開のため手動インストールですが、ビルドや Node.js は必要ありません。
 
 ## 読み慣れたページのまま、日本語で
 
@@ -38,13 +40,13 @@ Yomeru は、自分の Claude API キーで動く個人用 Chrome 拡張です�
 
 ## 3分で使い始める
 
-Claude API キーをすでにお持ちなら、ビルド不要で数分。ダウンロードしたフォルダを Chrome に読み込むだけです。
+Anthropic または OpenAI API キーをすでにお持ちなら、ビルド不要で数分。ダウンロードしたフォルダを Chrome に読み込むだけです。
 
 ### 必要なもの
 
 - デスクトップ版 Google Chrome
-- [Claude Console](https://platform.claude.com/) で作成した API キー
-- Claude API の利用枠またはクレジット（[料金の目安](#料金の目安)）
+- [Claude Console](https://platform.claude.com/) または [OpenAI Platform](https://platform.openai.com/) で作成した API キー
+- 使う API の利用枠またはクレジット（[料金の目安](#料金の目安)）
 
 ### 1. Yomeru をダウンロード
 
@@ -69,14 +71,16 @@ git clone https://github.com/HiyokoSauna37/yomeru.git
 4. 展開した `yomeru-main/`（Git の場合は `yomeru/`）フォルダを選ぶ
 5. Chrome の拡張機能（パズル）アイコンから、Yomeru のピンを ON
 
-### 3. Claude API キーを設定
+### 3. API キーを設定
 
-1. [Claude Console の API Keys](https://platform.claude.com/settings/keys) で、Yomeru に使うワークスペースを選んだ API キーを作成する
+1. Claude 用は [Claude Console の API Keys](https://platform.claude.com/settings/keys)、GPT 用は [OpenAI の API Keys](https://platform.openai.com/api-keys) で API キーを作成する
 2. Chrome のツールバーで Yomeru アイコンを押し、**設定**を開く（見つからない場合は `chrome://extensions` → Yomeru の **詳細** → **拡張機能のオプション**）
-3. API キーを貼り、**接続テスト** → **設定を保存**
+3. **Anthropic API キー**、**OpenAI API キー**の対応する欄へ貼る（片方だけでも、両方でも可）
+4. 「翻訳」の **モデル** を選び、**選択中のモデルで接続テスト** → **設定を保存**
 
-ワークスペースを指定していない API キーは、現在の Yomeru では使えません。
-接続テストも小さな API リクエストを 1 回送ります。利用枠がない場合は、Claude Console の [Billing](https://platform.claude.com/settings/billing) で確認してください。
+接続テストは選択中のモデルに小さな API リクエストを 1 回送ります。両方を確認する場合は、Claude と GPT に切り替えてそれぞれテストしてください。
+既存の Anthropic キーは更新後も引き継ぎます。モデルを切り替えても、もう片方のキーは消えません。
+ページ・画像翻訳のモデル、解説パネルのモデル、字幕のモデルは、それぞれ選択したモデルの API キーを使います。選択した提供元のキーが未登録の場合は、その提供元のキーを登録する案内を表示します。
 
 ### 4. 好きなページで翻訳
 
@@ -193,7 +197,7 @@ Web ページの画像を右クリックし、**画像を翻訳** を選びま�
 Web ページの文章は、リンクや太字などの HTML 要素で細かく分かれています。
 断片ごとに訳すと、日本語にしたときの語順や装飾の位置が不自然になりがちです。
 
-Yomeru は **段落全体をひとまとまり**として Claude に渡し、リンクや太字も日本語の語順に合わせて並べ直します。
+Yomeru は **段落全体をひとまとまり**として選択したモデルに渡し、リンクや太字も日本語の語順に合わせて並べ直します。
 コード、識別子、画像など翻訳すべきでない要素はそのまま残します。
 
 - 構造が同じなら元のテキストだけを書き換え、React などのページを壊しにくくする
@@ -205,7 +209,7 @@ Yomeru は **段落全体をひとまとまり**として Claude に渡し、リ
 <summary>語順を保つ仕組みを見る</summary>
 
 Yomeru はリンクや太字を `<i0>…</i0>`、コードや画像などを `<i1/>` という一時マーカーに変換します。
-Claude は文章だけでなくマーカーごと並べ替え、Yomeru が応答を DOM に戻します。
+モデルは文章だけでなくマーカーごと並べ替え、Yomeru が応答を DOM に戻します。
 
 ```text
 原文: See <i0>the documentation</i0> for <i1>details</i1>.
@@ -230,7 +234,8 @@ Claude は文章だけでなくマーカーごと並べ替え、Yomeru が応答
 | Claude Fable 5.1 | 10 / 50 | 約 $0.40 / ¥60 |
 
 目安は入力 5,000 token、出力 7,000 token、1 USD = ¥150 で計算しています。
-実際の料金はページ、設定、為替、Claude API の価格改定によって変わります。最新の単価は [Claude API の公式料金表](https://platform.claude.com/docs/en/about-claude/pricing) を確認してください。
+GPT モデルの概算単価とページあたりの目安は、設定画面でモデルを選ぶと表示されます。
+実際の料金はページ、設定、為替、各 API の価格改定によって変わります。最新の単価は [Claude API の公式料金表](https://platform.claude.com/docs/en/about-claude/pricing) と [OpenAI API の公式料金表](https://developers.openai.com/api/docs/pricing) を確認してください。
 
 - ポップアップに **このページ**と**累計**の概算料金を表示
 - キャッシュが有効で、モデル・翻訳先・指示・用語集・原文が一致する訳文は端末内から返し、新しい API リクエストを送らない
@@ -246,16 +251,17 @@ Yomeru はページを扱う拡張だからこそ、何を保存し、何を送�
 - **解説・質問で送るもの** — 選択箇所、質問、周辺とページ内の関連テキスト、ページタイトル、URL。続けて質問するときは直近の会話も送信（最大8メッセージ・合計12,000文字）
 - **YouTube 字幕で送るもの** — 動画ID、タイトル、字幕のテキストと時刻、前後の発話。動画や音声そのものは送信しません
 - **画像翻訳で送るもの** — 選択した画像の内容、ページタイトル、ページURL（クエリとフラグメントを除く）。画像は必要に応じて縮小します
-- **送信先** — 既定では拡張から `api.anthropic.com` へ直接送信。Yomeru 独自の中継・分析サーバーはありません
+- **送信先** — Claude は `api.anthropic.com`、GPT は `api.openai.com` へ拡張から直接送信。それぞれ対応する API キーだけを使います。Yomeru 独自の中継・分析サーバーはありません
 - **送信するタイミング** — 翻訳・解説・質問を実行したとき。「常に翻訳するサイト」に登録したホストではページを開いたとき。字幕は **字幕を翻訳** を押した動画でのみ先読み翻訳します
 - **キャッシュ** — 翻訳・解説・字幕・画像翻訳の結果をこの Chrome プロファイル内の IndexedDB に保存。設定から削除できます。画像翻訳のキャッシュには画像そのものではなく画像のハッシュと文字領域・読み取り結果・訳文を使います。会話履歴は開いているパネルのメモリ内で保持し、閉じるとリセットします
 
 全サイトへのアクセス権限は、開いている Web ページ上で翻訳 UI と DOM 操作を動かすために使います。
-API ベース URL を変更した場合、リクエストは指定した URL に送られます。
+提供元ごとの API ベース URL を変更した場合、その提供元のリクエストは指定した URL に送られます。
 機密情報を含む社内ページなどでは、その内容を設定先の API へ送ってよいか確認してから使ってください。
 
 ## 主な設定
 
+- Anthropic / OpenAI API キーと、提供元ごとの API ベース URL
 - 翻訳先の言語と、既定の表示（置き換え / 対訳）
 - モデルと `effort`
 - 文体・分野などの追加指示
@@ -331,7 +337,7 @@ npm test
 ANTHROPIC_API_KEY=... npm run real -- [model]
 ```
 
-- `npm test`: 字幕・画像の入出力検証と、モック API に対する翻訳・復元・対訳・解説・続きの質問・モデル選択・パネル移動・字幕再生同期・画像内Canvas翻訳・広告非表示/復元の E2E
+- `npm test`: APIキーと送信先の分離・既存設定の互換性・使用量計算、字幕・画像の入出力検証と、モック API に対する翻訳・復元・対訳・解説・続きの質問・モデル選択・パネル移動・字幕再生同期・画像内Canvas翻訳・広告非表示/復元の E2E。実 API への通信や課金はありません
 - テストには Node.js 20 以上が必要です。既存 Chromium を使う場合は `PW_EXECUTABLE_PATH` に実行ファイルのパスを指定できます
 - `npm run real`: Apache Camel AS2 の実セグメントを Claude API で翻訳（API 利用料が発生）
 

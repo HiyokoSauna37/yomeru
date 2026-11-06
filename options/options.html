@@ -21,23 +21,40 @@
 
   <div class="settings-intro"><span class="eyebrow">MAKE IT YOURS</span><h2>あなたの読み方に、合わせる。</h2><p>言葉も、文体も、表示も。いつもの読み心地をここから。</p></div>
   <div class="settings-layout">
-  <nav class="settings-nav" aria-label="設定の項目"><span class="eyebrow">PREFERENCES</span><a href="#connection">接続<span>01</span></a><a href="#translation">翻訳<span>02</span></a><a href="#advanced">詳細<span>03</span></a><a href="#usage-section">使用量<span>04</span></a><p>Powered by Claude</p></nav>
+  <nav class="settings-nav" aria-label="設定の項目"><span class="eyebrow">PREFERENCES</span><a href="#connection">接続<span>01</span></a><a href="#translation">翻訳<span>02</span></a><a href="#advanced">詳細<span>03</span></a><a href="#usage-section">使用量<span>04</span></a><p>Claude &amp; OpenAI</p></nav>
   <main class="settings-content">
   <section class="card" id="connection">
-    <div class="section-heading"><span class="section-number">01</span><div><h2>接続</h2><p>Claude とつなぐ、最初の準備。</p></div></div>
+    <div class="section-heading"><span class="section-number">01</span><div><h2>接続</h2><p>使いたいモデルの API キーを登録します。両方のキーを保存できます。</p></div></div>
     <div class="field">
       <label for="apiKey">Anthropic API キー</label>
       <div class="inline">
         <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
         <button class="btn ghost small" id="toggleKey">表示</button>
-        <button class="btn small" id="testKey">接続テスト</button>
       </div>
-      <p class="help">この端末の <code>chrome.storage.local</code> にだけ保存され、同期されません。リクエストは拡張から <code>api.anthropic.com</code> へ直接送られます。</p>
-      <p id="testResult" class="help"></p>
+      <p class="help">Claude モデルを選ぶと、このキーを使います。</p>
     </div>
     <div class="field">
-      <label for="apiBase">API ベース URL（通常は変更不要）</label>
+      <label for="apiBase">Anthropic API ベース URL（通常は変更不要）</label>
       <input type="text" id="apiBase" placeholder="https://api.anthropic.com" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="openaiApiKey">OpenAI API キー</label>
+      <div class="inline">
+        <input type="password" id="openaiApiKey" placeholder="sk-..." autocomplete="off" spellcheck="false">
+        <button class="btn ghost small" id="toggleOpenAIKey">表示</button>
+      </div>
+      <p class="help">GPT モデルを選ぶと、このキーを使います。</p>
+    </div>
+    <div class="field">
+      <label for="openaiApiBase">OpenAI API ベース URL（通常は変更不要）</label>
+      <input type="text" id="openaiApiBase" placeholder="https://api.openai.com" spellcheck="false">
+    </div>
+    <p class="help">キーはこの Chrome プロファイル内にだけ保存され、同期されません。選んだモデルに応じて Anthropic または OpenAI へ直接送信します。</p>
+    <div class="field">
+      <p id="testProvider" class="help"></p>
+      <button class="btn small" id="testKey">選択中のモデルで接続テスト</button>
+      <p class="help">下の「モデル」でテスト対象を選べます。小さな API リクエストを 1 回送信します。</p>
+      <p id="testResult" class="help" role="status" aria-live="polite"></p>
     </div>
   </section>
 
@@ -47,6 +64,7 @@
       <div class="field">
         <label for="model">モデル</label>
         <select id="model"></select>
+        <p class="help" id="modelProvider"></p>
         <p class="help" id="modelPrice"></p>
         <p class="help">ページ・画像翻訳と解説の既定モデルです。YouTube 字幕のモデルはポップアップで別に設定できます。</p>
       </div>

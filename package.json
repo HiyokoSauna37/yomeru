@@ -1,13 +1,13 @@
 {
   "name": "yomeru",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
-  "description": "Chrome extension: translate pages, images and YouTube subtitles, and explain selections with follow-up questions using the Claude API",
+  "description": "Chrome extension: translate pages, images and YouTube subtitles, and explain selections using Anthropic or OpenAI APIs",
   "scripts": {
     "icons": "python tools/make_icons.py",
     "check": "node tools/check.mjs",
-    "test": "node tests/backend-services.mjs && node tests/subtitles-unit.mjs && node tests/subtitle-timeline.mjs && node tests/image-unit.mjs && node tests/image-layout.mjs && node tests/explanation-cancel.mjs && node tests/youtube-extraction.mjs && node tests/e2e.mjs && node tests/explanation.mjs && node tests/youtube.mjs && node tests/image.mjs && node tests/ad-exclusion.mjs",
+    "test": "node tests/api-unit.mjs && node tests/providers.mjs && node tests/backend-services.mjs && node tests/subtitles-unit.mjs && node tests/subtitle-timeline.mjs && node tests/image-unit.mjs && node tests/image-layout.mjs && node tests/explanation-cancel.mjs && node tests/youtube-extraction.mjs && node tests/e2e.mjs && node tests/explanation.mjs && node tests/youtube.mjs && node tests/image.mjs && node tests/ad-exclusion.mjs",
     "real": "node tests/real_api_check.mjs"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 // ページ/選択範囲の翻訳と、設定画面のAPI接続テスト。
 import { estimateCostUsd } from "../shared/models.js";
-import { buildRequest, extractText, usageOf, checkStop } from "../shared/api.js";
+import { buildRequest, extractText, usageOf, checkStop, requireApiKey } from "../shared/api.js";
 import { buildSystemPrompt, buildUserMessage, parseSegments } from "../shared/prompt.js";
 import { cacheGetMany, cacheSetMany, sha256 } from "../shared/cache.js";
 import { getSettings, addUsage } from "../shared/settings.js";
@@ -33,7 +33,7 @@ async function lookupCache(s, segments, nocache) {
 // msg: {sessionId, segments:[{id,text}], context:{title,url}, nocache?}
 export async function translate(msg) {
   const s = await getSettings();
-  if (!s.apiKey) throw fatalError("APIキーが未設定です（拡張の設定画面で登録してください）");
+  requireApiKey(s);
   const segments = Array.isArray(msg.segments) ? msg.segments : [];
   const { results, pending, cached } = await lookupCache(s, segments, !!msg.nocache);
   let usage = null;
@@ -62,12 +62,18 @@ export async function translate(msg) {
 // 設定画面の「接続テスト」: 入力中のキー/モデルで 1 回だけ叩く
 export async function testKey(msg) {
   const base = await getSettings();
-  const s = { ...base, apiKey: msg.apiKey || base.apiKey, model: msg.model || base.model, apiBase: msg.apiBase || base.apiBase, effort: "low" };
-  if (!s.apiKey) return { ok: false, error: "APIキーが空です" };
-  const req = buildRequest(s, "Reply with exactly: OK", "ping", { maxTokens: 512 });
+  const s = { ...base, apiKey: msg.apiKey ?? base.apiKey, apiBase: msg.apiBase ?? base.apiBase,
+    openaiApiKey: msg.openaiApiKey ?? base.openaiApiKey, openaiApiBase: msg.openaiApiBase ?? base.openaiApiBase,
+    model: msg.model ?? base.model, effort: "low" };
   try {
+    requireApiKey(s);
+    const req = buildRequest(s, "Reply with exactly: OK", "ping", { maxTokens: 512 });
     const json = await fetchWithRetry(req, new AbortController().signal, 1);
-    return { ok: true, model: json.model, text: extractText(json).trim(), costUsd: estimateCostUsd(s.model, usageOf(json)) };
+    const stop = checkStop(json);
+    if (!stop.ok) throw fatalError(stop.message);
+    const text = extractText(json).trim();
+    if (stop.truncated || !text) throw new Error("接続テストの応答を取得できませんでした。もう一度お試しください");
+    return { ok: true, model: json.model, text, costUsd: estimateCostUsd(s.model, usageOf(json)) };
   } catch (e) {
     return { ok: false, error: String((e && e.message) || e) };
   }

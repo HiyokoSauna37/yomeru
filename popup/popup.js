@@ -1,4 +1,4 @@
-import { MODELS, LANG_PRESETS, fmtUsd, fmtJpy } from "../shared/models.js";
+import { MODELS, LANG_PRESETS, modelInfo, fmtUsd, fmtJpy } from "../shared/models.js";
 import { $, bg, fillSelect, segmented } from "../shared/ui.js";
 import { createYouTubeCard } from "./youtube.js";
 
@@ -70,8 +70,19 @@ function startTranslate(mode) {
 }
 
 async function saveSetting(partial) {
-  await bg({ type: "saveSettings", partial });
-  Object.assign(settings, partial);
+  const r = await bg({ type: "saveSettings", partial });
+  if (!r?.ok) throw new Error(r?.error || "設定を保存できません");
+  settings = r.settings;
+  renderKeyStatus();
+}
+
+function renderKeyStatus() {
+  const model = modelInfo(settings.model);
+  const provider = model?.provider === "openai" ? "OpenAI" : "Anthropic";
+  $("nokey").hidden = !!model && settings.hasKey;
+  $("nokeyText").textContent = model
+    ? `ページ翻訳用の ${provider} API キーがまだ登録されていません。`
+    : "保存されているモデルは使用できません。モデルを選び直してください。";
 }
 
 window.addEventListener("pagehide", () => { youtube.dispose(); clearInterval(pollTimer); });
@@ -95,7 +106,7 @@ async function init() {
   else [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
   settings = (await bg({ type: "getSettings" })).settings;
-  if (!settings.hasKey) $("nokey").hidden = false;
+  renderKeyStatus();
 
   fillSelect($("lang"), LANG_PRESETS, settings.targetLang);
   fillSelect($("model"), MODELS, settings.model, (m) => m.label);

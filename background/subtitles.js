@@ -1,6 +1,6 @@
 // YouTube字幕のバッチ翻訳。通常の翻訳とはモデル設定を分ける。
 import { DEFAULTS, MODELS, estimateCostUsd } from "../shared/models.js";
-import { buildRequest, extractText, usageOf, checkStop } from "../shared/api.js";
+import { buildRequest, extractText, usageOf, checkStop, requireApiKey } from "../shared/api.js";
 import { cacheGetMany, cacheSetMany, sha256 } from "../shared/cache.js";
 import { getSettings, addUsage } from "../shared/settings.js";
 import { SUBTITLES_VERSION, normalizeSubtitles, subtitleVideoUrlAllowed, buildSubtitleSystem, buildSubtitleMessage, parseSubtitleResult } from "../shared/subtitles.js";
@@ -21,7 +21,7 @@ export async function translateSubtitles(msg, sender) {
     if (!MODELS.some((entry) => entry.id === model)) throw fatalError("選択した字幕モデルは使用できません");
     const s = { ...saved, model };
     if (signal.aborted) throw abortError();
-    if (!s.apiKey) throw fatalError("APIキーが未設定です（拡張の設定画面で登録してください）");
+    requireApiKey(s);
     const system = buildSubtitleSystem(s, input);
     const message = buildSubtitleMessage(input);
     // 同じ短文でも動画・周辺の発話・翻訳先が変われば訳は変わる。バッチ単位で保存する。

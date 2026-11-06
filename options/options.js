@@ -1,4 +1,4 @@
-import { MODELS, EFFORTS, LANG_PRESETS, DEFAULTS, modelInfo, fmtUsd, fmtJpy } from "../shared/models.js";
+import { MODELS, EFFORTS, LANG_PRESETS, DEFAULTS, modelInfo, modelProvider, fmtUsd, fmtJpy } from "../shared/models.js";
 import { $, bg, fillSelect, segmented } from "../shared/ui.js";
 
 const LIMITS = { batchChars: [500, 8000], concurrency: [1, 8] };
@@ -15,6 +15,9 @@ function estimatePageUsd(m) {
 function showModelPrice() {
   const m = modelInfo($("model").value);
   if (!m) { $("modelPrice").textContent = ""; return; }
+  const provider = modelProvider(m.id) === "openai" ? "OpenAI" : "Anthropic";
+  $("modelProvider").textContent = `${provider} API キーを使います。`;
+  $("testProvider").textContent = `接続テスト: ${m.label} / ${provider}`;
   const usd = estimatePageUsd(m);
   const rate = Number($("usdJpy").value) || DEFAULTS.usdJpy;
   $("modelPrice").textContent = `入力 $${m.input}/MTok · 出力 $${m.output}/MTok（目安: 英文1万字のページ ≈ ${fmtUsd(usd)} ≈ ${fmtJpy(usd, rate)}）`;
@@ -48,6 +51,8 @@ async function load() {
   $("ver").textContent = `v${chrome.runtime.getManifest().version}`;
   $("apiKey").value = settings.apiKey || "";
   $("apiBase").value = settings.apiBase || "";
+  $("openaiApiKey").value = settings.openaiApiKey || "";
+  $("openaiApiBase").value = settings.openaiApiBase || DEFAULTS.openaiApiBase;
   fillSelect($("model"), MODELS, settings.model, (m) => `${m.label} — ${m.note}`);
   fillSelect($("effort"), EFFORTS, settings.effort, (e) => e.label);
   $("targetLang").value = settings.targetLang;
@@ -72,6 +77,8 @@ function collect() {
   return {
     apiKey: $("apiKey").value.trim(),
     apiBase: $("apiBase").value.trim() || DEFAULTS.apiBase,
+    openaiApiKey: $("openaiApiKey").value.trim(),
+    openaiApiBase: $("openaiApiBase").value.trim() || DEFAULTS.openaiApiBase,
     model: $("model").value,
     effort: $("effort").value,
     targetLang: $("targetLang").value.trim() || DEFAULTS.targetLang,
@@ -101,7 +108,11 @@ async function testKey() {
   const out = $("testResult");
   out.className = "help testing";
   out.textContent = "接続中…";
-  const r = await bg({ type: "testKey", apiKey: $("apiKey").value.trim(), model: $("model").value, apiBase: $("apiBase").value.trim() });
+  const r = await bg({
+    type: "testKey", model: $("model").value,
+    apiKey: $("apiKey").value.trim(), apiBase: $("apiBase").value.trim() || DEFAULTS.apiBase,
+    openaiApiKey: $("openaiApiKey").value.trim(), openaiApiBase: $("openaiApiBase").value.trim() || DEFAULTS.openaiApiBase,
+  });
   if (r && r.ok) {
     out.className = "help ok";
     out.textContent = `OK — ${r.model} が応答（${r.text || ""}）· ${fmtUsd(r.costUsd || 0)}`;
@@ -113,12 +124,14 @@ async function testKey() {
 
 $("save").addEventListener("click", save);
 $("testKey").addEventListener("click", testKey);
-$("toggleKey").addEventListener("click", () => {
-  const i = $("apiKey");
-  i.type = i.type === "password" ? "text" : "password";
-  $("toggleKey").textContent = i.type === "password" ? "表示" : "隠す";
-});
-$("model").addEventListener("change", showModelPrice);
+for (const [button, input] of [["toggleKey", "apiKey"], ["toggleOpenAIKey", "openaiApiKey"]]) {
+  $(button).addEventListener("click", () => {
+    const i = $(input);
+    i.type = i.type === "password" ? "text" : "password";
+    $(button).textContent = i.type === "password" ? "表示" : "隠す";
+  });
+}
+$("model").addEventListener("change", () => { showModelPrice(); $("testResult").textContent = ""; });
 $("usdJpy").addEventListener("input", showModelPrice);
 $("clearCache").addEventListener("click", async () => {
   if (!confirm("翻訳キャッシュをすべて削除します。よろしいですか？")) return;

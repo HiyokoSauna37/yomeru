@@ -1,5 +1,5 @@
 // Yomeru service worker: ブラウザイベント・メッセージの振り分け・コンテンツスクリプト注入。
-import { MODELS } from "./shared/models.js";
+import { MODELS, modelProvider } from "./shared/models.js";
 import { cacheClear, cacheCount, cachePrune } from "./shared/cache.js";
 import { getSettings, saveSettings, resetUsage } from "./shared/settings.js";
 import { loadYouTubeCaptions } from "./shared/youtube.js";
@@ -22,7 +22,7 @@ const MENU_IMAGE = "tf-image";
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({ id: MENU_PAGE, title: "このページを Yomeru で翻訳", contexts: ["all"] });
-  chrome.contextMenus.create({ id: MENU_SELECTION, title: "選択範囲を Claude で翻訳", contexts: ["selection"] });
+  chrome.contextMenus.create({ id: MENU_SELECTION, title: "選択範囲を Yomeru で翻訳", contexts: ["selection"] });
   chrome.contextMenus.create({ id: MENU_IMAGE, title: "画像を翻訳", contexts: ["image"] });
   const s = await getSettings();
   chrome.contextMenus.create({ id: MENU_EXPLAIN, title: "選択範囲を Yomeru で解説", contexts: ["selection"], visible: s.explanationEnabled !== false });
@@ -82,10 +82,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 const fromExtensionPage = (sender) => !!sender.url && sender.url.startsWith(chrome.runtime.getURL(""));
 const FORBIDDEN = Promise.resolve({ ok: false, error: "forbidden" });
 
-// apiKey を外に出さない（content script / popup 向け）
+// 両プロバイダーの API キーを外に出さない（content script / popup 向け）。
 function publicSettings(s) {
-  const { apiKey, ...rest } = s;
-  return { ...rest, hasKey: !!apiKey, models: MODELS.map(({ id, label }) => ({ id, label })) };
+  const { apiKey, openaiApiKey, ...rest } = s;
+  const hasAnthropicKey = !!apiKey?.trim();
+  const hasOpenAIKey = !!openaiApiKey?.trim();
+  const provider = MODELS.some(({ id }) => id === s.model) ? modelProvider(s.model) : null;
+  return { ...rest, hasKey: provider === "openai" ? hasOpenAIKey : provider === "anthropic" && hasAnthropicKey,
+    hasAnthropicKey, hasOpenAIKey, models: MODELS.map(({ id, label }) => ({ id, label, provider: modelProvider(id) })) };
 }
 
 function handle(msg, sender) {
@@ -113,7 +117,7 @@ function handle(msg, sender) {
       chrome.runtime.openOptionsPage();
       return Promise.resolve({ ok: true });
     case "testKey":
-      return testKey(msg);
+      return fromExtensionPage(sender) ? testKey(msg) : FORBIDDEN;
     case "translate":
       return translate(msg);
     case "fetchImage":

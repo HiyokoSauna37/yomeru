@@ -1,6 +1,6 @@
 // 選択範囲の解説と、文脈を引き継ぐ追加質問。
 import { MODELS, estimateCostUsd } from "../shared/models.js";
-import { buildRequest, extractText, usageOf, checkStop } from "../shared/api.js";
+import { buildRequest, extractText, usageOf, checkStop, requireApiKey } from "../shared/api.js";
 import { cacheGetMany, cacheSetMany, sha256 } from "../shared/cache.js";
 import { getSettings, addUsage } from "../shared/settings.js";
 import { EXPLAIN_VERSION, normalizeExplanation, buildExplanationSystem, buildExplanationMessage } from "../shared/explain.js";
@@ -15,7 +15,7 @@ export async function explain(msg) {
     if (signal.aborted) throw abortError();
     const s = msg.model == null ? saved : { ...saved, model: msg.model };
     if (s.explanationEnabled === false) throw fatalError("解説機能は設定で無効になっています");
-    if (!s.apiKey) throw fatalError("APIキーが未設定です（拡張の設定画面で登録してください）");
+    requireApiKey(s);
     const system = buildExplanationSystem(s, input.detail, input.question);
     const message = buildExplanationMessage(input);
     // 文脈・説明の詳しさ・プロンプトが変われば解説も変わる。
