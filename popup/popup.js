@@ -19,6 +19,7 @@ async function content(msg) {
 }
 
 function statusLabel(st) {
+  if (st.status === "running" && st.pageKind === "google-docs" && !st.progress.total) return "本文を取得中…";
   if (st.status === "running") return `翻訳中 ${st.progress.done}/${st.progress.total}`;
   if (st.status === "translated") return st.mode === "bilingual" ? "翻訳済み（対訳）" : "翻訳済み（置換）";
   return "未翻訳";

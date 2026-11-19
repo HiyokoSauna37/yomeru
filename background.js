@@ -10,6 +10,7 @@ import { translate, testKey } from "./background/translations.js";
 import { translateSubtitles } from "./background/subtitles.js";
 import { fetchImage, translateImage } from "./background/images.js";
 import { explain } from "./background/explanation.js";
+import { loadGoogleDoc } from "./background/google-docs.js";
 
 // インストール前から開いていたタブへの注入順も manifest の定義を使う。
 const { js: CONTENT_JS, css: CONTENT_CSS } = chrome.runtime.getManifest().content_scripts[0];
@@ -126,6 +127,8 @@ function handle(msg, sender) {
       return imageSenderAllowed(sender) ? translateImage(msg) : FORBIDDEN;
     case "getYouTubeCaptions":
       return loadYouTubeCaptions(sender, msg.videoId);
+    case "getGoogleDoc":
+      return loadGoogleDoc(msg, sender);
     case "translateSubtitles":
       return subtitleSenderAllowed(sender) ? translateSubtitles(msg, sender) : FORBIDDEN;
     case "explain":

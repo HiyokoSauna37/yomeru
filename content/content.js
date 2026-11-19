@@ -8,6 +8,7 @@
   const Selection = globalThis.TFSelection;
   const Exclusions = globalThis.TFExclusions;
   const ImageTranslator = globalThis.TFImage;
+  const GoogleDocs = globalThis.TFGoogleDocs;
   if (!Seg || !Page || !Ui || !Selection || !ImageTranslator) return;
   globalThis.__tfLoaded = true;
 
@@ -35,6 +36,7 @@
   let ui = null;
   let selection = null;
   let imageTranslator = null;
+  let preparation = null;
 
   const errorMessage = (e) => String((e && e.message) || e);
   const newSessionId = () => (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
@@ -121,8 +123,9 @@
     }
   }
   const page = Page.create({ getMode: () => state.mode, mutate: suppress });
-  const hasPageChanges = () => page.hasChanges() || !!Exclusions?.hasHiddenAds();
-  const hideAds = (root = document.body) => suppress(() => Exclusions?.hideAds(root) || 0);
+  const docsReader = GoogleDocs?.create({ onClose: restorePage });
+  const hasPageChanges = () => page.hasChanges() || docsReader?.active || !!Exclusions?.hasHiddenAds();
+  const hideAds = (root = document.body) => GoogleDocs?.current() ? 0 : suppress(() => Exclusions?.hideAds(root) || 0);
   const isOurs = (n) => !!n && n.nodeType === 1 && n.hasAttribute("data-tf");
 
   function isInterestingMutation(m) {
@@ -143,7 +146,7 @@
     return false;
   }
   function startObserver() {
-    if (observer) return;
+    if (observer || docsReader?.active) return;
     observer = new MutationObserver((muts) => {
       if (suppressed || state.status !== "translated") return;
       // 翻訳後に配信された広告も画面から外す。本文の追い翻訳回数とは独立して処理する。
@@ -195,34 +198,81 @@
 
   // ---------- translate ----------
   function collectUnits(settings) {
-    return page.collectUnits(document.body, { targetLang: settings.targetLang, skipNav: settings.skipNav });
+    const root = GoogleDocs?.current() ? docsReader?.content : document.body;
+    return root ? page.collectUnits(root, { targetLang: settings.targetLang, skipNav: settings.skipNav }) : [];
+  }
+
+  async function prepareGoogleDoc(doc) {
+    const sessionId = newSessionId();
+    state.status = "running";
+    state.sessionId = sessionId;
+    state.progress = { done: 0, total: 0 };
+    cancelled = false;
+    startKeepAlive();
+    getUi().showBadge("Googleドキュメントの本文を取得中…", "info", 0);
+    try {
+      const r = await send({ type: "getGoogleDoc", documentUrl: doc.url, sessionId });
+      if (state.sessionId !== sessionId || cancelled) return false;
+      if (!r?.ok) throw new Error(r?.error || "本文を取得できませんでした。");
+      if (r.key !== doc.key || GoogleDocs.current()?.key !== doc.key) throw new Error("文書またはタブが切り替わりました。もう一度翻訳してください。");
+      docsReader.show(r.html, doc.key);
+      return true;
+    } finally {
+      if (state.sessionId === sessionId) {
+        state.sessionId = null;
+        stopKeepAlive();
+        state.status = docsReader.active ? "translated" : "idle";
+        if (cancelled) getUi().showBadge("中止しました", "info", 2000);
+      }
+    }
   }
 
   async function translatePage(opts = {}) {
-    if (state.status === "running") return;
-    state.error = null;
-    const settings = await loadSettings();
-    if (!settings.hasKey) {
-      const provider = settings.models?.find((model) => model.id === settings.model)?.provider;
-      getUi().showBadge(`${provider === "openai" ? "OpenAI" : "Anthropic"} APIキーが未設定です。拡張の設定画面で登録してください`, "error", 5000);
-      return;
-    }
-    const mode = opts.mode || settings.displayMode || "replace";
-    if (state.status === "translated" && state.mode !== mode) restorePage();
-    state.mode = mode;
-    hideAds();
-    const units = collectUnits(settings);
-    if (!units.length) {
-      if (Exclusions?.hasHiddenAds()) {
-        state.status = "translated";
-        startObserver();
-        getUi().showBadge("広告を非表示にしました。「原文に戻す」で復元できます", "done", 3500);
+    if (state.status === "running" || preparation) return;
+    const token = {};
+    preparation = token;
+    cancelled = false;
+    try {
+      state.error = null;
+      const settings = await loadSettings();
+      if (preparation !== token) return;
+      if (!settings.hasKey) {
+        const provider = settings.models?.find((model) => model.id === settings.model)?.provider;
+        getUi().showBadge(`${provider === "openai" ? "OpenAI" : "Anthropic"} APIキーが未設定です。拡張の設定画面で登録してください`, "error", 5000);
         return;
       }
-      if (state.status !== "translated") getUi().showBadge("翻訳する文が見つかりません", "info", 2500);
-      return;
+      const mode = opts.mode || settings.displayMode || "replace";
+      if (state.status === "translated" && state.mode !== mode) {
+        restorePage({ keepReader: true });
+        preparation = token;
+      }
+      state.mode = mode;
+      const doc = GoogleDocs?.current();
+      if (doc && !docsReader.active && !await prepareGoogleDoc(doc)) return;
+      if (preparation !== token) return;
+      hideAds();
+      const units = collectUnits(settings);
+      if (!units.length) {
+        if (docsReader?.active) {
+          state.status = "translated";
+          getUi().showBadge("本文を開きました。翻訳が必要な文は見つかりませんでした", "info", 3500);
+        } else if (Exclusions?.hasHiddenAds()) {
+          state.status = "translated";
+          startObserver();
+          getUi().showBadge("広告を非表示にしました。「原文に戻す」で復元できます", "done", 3500);
+        } else if (state.status !== "translated") getUi().showBadge("翻訳する文が見つかりません", "info", 2500);
+        return;
+      }
+      await runUnits(units, settings, {});
+    } catch (error) {
+      if (preparation !== token) return;
+      if (cancelled) return;
+      state.error = errorMessage(error);
+      state.status = hasPageChanges() ? "translated" : "idle";
+      getUi().showBadge(state.error, "error", 8000);
+    } finally {
+      if (preparation === token) preparation = null;
     }
-    await runUnits(units, settings, {});
   }
 
   // 同時実行数 n のワーカープール
@@ -318,12 +368,14 @@
     if (state.sessionId) send({ type: "cancel", sessionId: state.sessionId }).catch(() => {});
   }
 
-  function restorePage() {
+  function restorePage({ keepReader = false } = {}) {
     cancelSession();
+    preparation = null;
     state.sessionId = null;
     stopObserver();
     stopKeepAlive();
     page.restore();
+    if (!keepReader) docsReader?.close();
     Exclusions?.restoreAds();
     state.status = "idle";
     state.progress = { done: 0, total: 0 };
@@ -346,6 +398,7 @@
       error: state.error,
       host: location.hostname,
       title: document.title,
+      pageKind: GoogleDocs?.current() ? "google-docs" : "page",
     };
   }
 

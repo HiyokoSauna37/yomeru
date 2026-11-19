@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Yomeru",
-  "version": "0.4.0",
-  "description": "Anthropic / OpenAI API でページ・画像・YouTube 字幕を翻訳し、選択箇所の解説から続けて質問できる個人用拡張",
+  "version": "0.5.0",
+  "description": "Anthropic / OpenAI API でページ・Googleドキュメント・画像・YouTube 字幕を翻訳し、選択箇所の解説から続けて質問できる個人用拡張",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -31,7 +31,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "content/exclusions.js", "content/segmenter.js", "content/page.js",
+        "content/exclusions.js", "content/segmenter.js", "content/page.js", "content/google-docs.js",
         "content/context.js", "content/ui.js", "content/selection.js",
         "content/image-codec.js", "content/image-renderer.js", "content/image-layout.js",
         "content/image-overlay.js", "content/image.js", "content/content.js",
