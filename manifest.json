@@ -31,7 +31,9 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "content/exclusions.js", "content/segmenter.js", "content/page.js", "content/google-docs.js",
+        "shared/google-docs-location.js", "content/google-docs.js",
+        "content/exclusions.js", "content/segmenter.js", "content/page.js",
+        "content/page-observer.js", "content/page-translation.js",
         "content/context.js", "content/ui.js", "content/selection.js",
         "content/image-codec.js", "content/image-renderer.js", "content/image-layout.js",
         "content/image-overlay.js", "content/image.js", "content/content.js",

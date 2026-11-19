@@ -311,6 +311,8 @@ background/google-docs.js Googleドキュメントの権限・文書タブ検証
 content/exclusions.js  広告の判定・抽出除外・非表示と復元
 content/segmenter.js   DOM → セグメント化（マーカー直列化 / 復元 / in-place 適用）。純粋な DOM ロジック
 content/page.js        ページ翻訳の DOM 適用・復元と、翻訳済みノードの状態管理
+content/page-translation.js セグメントの翻訳・再試行・中止と、通常ページ／Google Docs の表示切り替え
+content/page-observer.js 通常ページの DOM 変更を監視し、追い翻訳と広告非表示を起動
 content/google-docs.js Googleドキュメント本文の安全な再構築・閲覧画面と復元
 content/context.js     選択箇所と質問の語をもとに、周辺やページ内の関連する定義・用例を収集
 content/ui.js          ページ内 UI（進行バッジ・選択操作・結果パネル）の Shadow DOM
@@ -320,7 +322,7 @@ content/image-codec.js  画像の取得・SVG変換・API向け縮小
 content/image-renderer.js 背景色推定・文字組み・翻訳Canvas生成
 content/image-layout.js 画像の配置・object-fit・ヘッダー遮蔽計算
 content/image-overlay.js Canvas表示・原文切替・スクロール追従・後片付け
-content/content.js     ページ翻訳の進行、MutationObserver による追い翻訳、メッセージ処理
+content/content.js     各機能の初期化、設定と使用量の共有、ブラウザメッセージの振り分け
 content/subtitle-timeline.js 字幕の時刻・バッチ・先読み範囲
 content/youtube.js     YouTube 字幕の開始/停止、先読み翻訳、再生同期
 content/youtube-ui.js  YouTube 字幕の表示、元字幕の表示復元
@@ -331,10 +333,11 @@ options/               設定ページ
 shared/                モデル・API・プロンプト・解説・キャッシュ・設定・UI の共通モジュール
 shared/subtitles.js    字幕専用プロンプトと入出力の検証
 shared/youtube.js      YouTube の字幕トラック・文字起こし欄からの取得
+shared/google-docs-location.js Google Docs の文書 URL とタブの識別
 shared/image.js        画像データの検証・取得、OCR/翻訳プロンプト
 fonts/                 M PLUS Rounded 1c（OFL、ページ本文には不使用）
 icons/                 y マーク（SVG / PNG、16〜128px）
-tools/                 構文チェック、アイコン・README 画像の生成
+tools/                 構文チェック、テストの起動、アイコン・README 画像の生成
 tests/                 Chromium E2E、実 API 確認、テスト用 fixture
 ```
 
@@ -351,6 +354,7 @@ ANTHROPIC_API_KEY=... npm run real -- [model]
 ```
 
 - `npm test`: APIキーと送信先の分離・既存設定の互換性・使用量計算、字幕・画像の入出力検証と、モック API に対する翻訳・復元・対訳・解説・続きの質問・モデル選択・パネル移動・字幕再生同期・画像内Canvas翻訳・広告非表示/復元・Googleドキュメントの本文翻訳と取得失敗/停止/文書タブ切替の E2E。実 API への通信や課金はありません
+- `npm run test:unit` は Chromium を使わないテスト、`npm run test:browser` は Chromium を使うテストだけを実行します
 - 公開Googleドキュメントの実際の取得も確認する場合は `GOOGLE_DOCS_LIVE_URL='<文書URL>' node tests/google-docs.mjs`。本文取得はGoogleへの通信、翻訳はモックAPIを使います
 - テストには Node.js 20 以上が必要です。既存 Chromium を使う場合は `PW_EXECUTABLE_PATH` に実行ファイルのパスを指定できます
 - `npm run real`: Apache Camel AS2 の実セグメントを Claude API で翻訳（API 利用料が発生）

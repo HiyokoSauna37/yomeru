@@ -1,13 +1,10 @@
 // Canvas の編集画面を変更せず、書き出した本文だけを閲覧・翻訳する。
 (() => {
   if (globalThis.TFGoogleDocs) return;
+  const { ORIGIN, CHANGED_ERROR, parse } = globalThis.TFGoogleDocsLocation;
 
   function current() {
-    if (location.origin !== "https://docs.google.com") return null;
-    const match = location.pathname.match(/^\/document\/(?:u\/\d+\/)?d\/([\w-]+)\/(?:edit|view|preview|mobilebasic)?\/?$/);
-    if (!match) return null;
-    const tab = new URLSearchParams(location.search).get("tab") || new URLSearchParams(location.hash.slice(1)).get("tab") || "t.0";
-    return { key: `${match[1]}:${tab}`, url: location.href };
+    return location.origin === ORIGIN ? parse(location.href) : null;
   }
 
   const ALLOWED = new Set("P DIV SECTION ARTICLE H1 H2 H3 H4 H5 H6 UL OL LI DL DT DD TABLE THEAD TBODY TFOOT TR TH TD CAPTION COLGROUP COL BLOCKQUOTE PRE CODE KBD SAMP VAR SPAN A B STRONG I EM U S DEL SUB SUP BR HR SMALL ABBR Q CITE FIGURE FIGCAPTION".split(" "));
@@ -99,7 +96,7 @@
 
     function show(html, expectedKey) {
       const article = articleFromHtml(html);
-      if (current()?.key !== expectedKey) throw new Error("文書またはタブが切り替わりました。もう一度翻訳してください。");
+      if (current()?.key !== expectedKey) throw new Error(CHANGED_ERROR);
       close();
       host = document.createElement("div");
       host.id = "tf-docs-reader";

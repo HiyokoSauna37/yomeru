@@ -1,26 +1,23 @@
 // Google Docs の HTML 書き出しを、現在のタブと同じ閲覧権限で取得する。
+import "../shared/google-docs-location.js";
 import { withSession } from "./requests.js";
 
+const { ORIGIN, CHANGED_ERROR, parse } = globalThis.TFGoogleDocsLocation;
 const MAX_BYTES = 2 * 1024 * 1024;
 const ACCESS_ERROR = "本文を取得できません。Googleへのログイン、文書の閲覧権限、ダウンロードの許可を確認してください。";
-const CHANGED_ERROR = "文書またはタブが切り替わりました。もう一度翻訳してください。";
 
 export function googleDocLocation(value) {
-  try {
-    const url = new URL(value);
-    const match = url.pathname.match(/^\/document\/(?:u\/(\d+)\/)?d\/([\w-]+)\/(?:edit|view|preview|mobilebasic)?\/?$/);
-    if (url.origin !== "https://docs.google.com" || !match) return null;
-    const tab = url.searchParams.get("tab") || new URLSearchParams(url.hash.slice(1)).get("tab") || "t.0";
-    if (!/^[\w.-]{1,100}$/.test(tab)) return null;
-    const exportUrl = new URL(`/document/${match[1] ? `u/${match[1]}/` : ""}d/${match[2]}/export`, url.origin);
-    exportUrl.searchParams.set("format", "html");
-    exportUrl.searchParams.set("tab", tab);
-    for (const name of ["authuser", "resourcekey"]) {
-      const v = url.searchParams.get(name);
-      if (v && v.length <= 200) exportUrl.searchParams.set(name, v);
-    }
-    return { key: `${match[2]}:${tab}`, exportUrl: exportUrl.href };
-  } catch { return null; }
+  const doc = parse(value);
+  if (!doc || !/^[\w.-]{1,100}$/.test(doc.tab)) return null;
+  const { url, account, documentId, tab, key } = doc;
+  const exportUrl = new URL(`/document/${account ? `u/${account}/` : ""}d/${documentId}/export`, ORIGIN);
+  exportUrl.searchParams.set("format", "html");
+  exportUrl.searchParams.set("tab", tab);
+  for (const name of ["authuser", "resourcekey"]) {
+    const value = url.searchParams.get(name);
+    if (value && value.length <= 200) exportUrl.searchParams.set(name, value);
+  }
+  return { key, exportUrl: exportUrl.href };
 }
 
 async function readHtml(response) {
@@ -48,7 +45,7 @@ export async function loadGoogleDoc(msg, sender) {
   const expected = googleDocLocation(msg.documentUrl);
   let origin;
   try { origin = new URL(sender?.url).origin; } catch { /* 不正な送信元 */ }
-  if (!expected || origin !== "https://docs.google.com" || sender?.frameId !== 0 || !sender?.tab?.id) {
+  if (!expected || origin !== ORIGIN || sender?.frameId !== 0 || !sender?.tab?.id) {
     return { ok: false, error: "Googleドキュメントの文書画面から翻訳してください。" };
   }
   return withSession(msg.sessionId, async (signal) => {
